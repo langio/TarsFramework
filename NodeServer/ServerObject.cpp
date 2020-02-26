@@ -15,6 +15,7 @@
  */
 
 #include "ServerObject.h"
+#include "Activator.h"
 #include "RegistryProxy.h"
 #include "util/tc_clientsocket.h"
 #include "servant/Communicator.h"
@@ -39,7 +40,7 @@ ServerObject::ServerObject( const ServerDescriptor& tDesc)
 , _started(false)
 {
     //60秒内最多启动10次，达到10次启动仍失败后,每隔600秒再重试一次
-    _activatorPtr  = new Activator(60,10,600);
+    _activatorPtr  = new Activator(this, 60,10,600);
 
     //服务相关修改集中放到setServerDescriptor函数中
      setServerDescriptor(tDesc);
@@ -355,6 +356,26 @@ void ServerObject::keepAlive(pid_t pid,const string &adapter)
     }
 }
 
+
+void ServerObject::keepActiving(int64_t pid)
+{
+    Lock lock(*this);
+    if (pid <= 0)
+    {
+        LOG->error()<<FILE_FUN<< _application << "." << _serverName << " pid "<<pid<<" error, pid <= 0"<<endl;
+        return;
+    }
+    else
+    {
+        LOG->debug() << FILE_FUN<<_serverType<< "|pid|" << pid <<"|server|"<<_application << "." << _serverName << endl;
+    }
+    time_t now  = TNOW;
+    setLastKeepAliveTime(now);
+    setPid(pid);
+
+    setState(ServerObject::Activating);
+}
+
 void ServerObject::setLastKeepAliveTime(int t,const string& adapter)
 {
     Lock lock(*this);
@@ -568,7 +589,7 @@ void ServerObject::doMonScript()
             if(_state == ServerObject::Activating||tNow - _keepAliveTime > ServantHandle::HEART_BEAT_INTERVAL)
             {
                  map<string,string> mResult;
-                 _activatorPtr->doScript(_serverId,_monitorScript,sResult,mResult);
+                 _activatorPtr->doScript(_monitorScript,sResult,mResult);
                  if(mResult.find("pid") != mResult.end() && TC_Common::isdigit(mResult["pid"]) == true)
                  {
                      TLOGDEBUG("ServerObject::doMonScript "<< _serverId << "|"<< mResult["pid"] << endl);
@@ -638,7 +659,8 @@ void ServerObject::checkServer(int iTimeout)//checkServer时对服务所占用�
             sResult = sResult == ""?"[alarm] down, server is inactive":sResult;
             NODE_LOG("KeepAliveThread")->debug() <<FILE_FUN<<_serverId<<" "<<sResult << "|_state:" << toStringState(_state) << endl;
 
-            g_app.reportServer(_serverId,sResult);
+            g_app.reportServer(_serverId, "", getNodeInfo().nodeName, sResult); 
+            // g_app.reportServer(_serverId,sResult);
 
             CommandStart command(this);
             int ret = command.doProcess();

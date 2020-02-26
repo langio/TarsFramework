@@ -5,8 +5,6 @@ This project is the basic service of the Tars framework and is the basic framewo
 
 Directory |Features
 ----------------------|----------------
-sql                   |Create scripts and sql tools for the database of the TARS framework runtime environment
-conf                  |Template configuration for each basic service
 protocol              |Define communication interface files for each underlying service definition
 RegistryServer        |Name service routing
 NodeServer            |Management service
@@ -19,3 +17,4 @@ PropertyServer        |Attribute statistics service
 NotifyServer          |Abnormal reporting service
 deploy                |Template configuration and tool scripts for core infrastructure services
 tarscpp               |The source implementation of the Tars RPC framework C++ language
+

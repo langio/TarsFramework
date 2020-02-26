@@ -130,6 +130,8 @@ EMTaskItemStatus TaskList::start(const TaskItemReq &req, string &log)
         TLOGERROR("TaskList::executeSingleTask startServer error:" << log << endl);
     }
 
+    TLOGERROR("TaskList::startServer error:" << req.application << "," << req.serverName << "," << req.nodeName << "," << req.userName << ", info:" << log << endl);
+
     return EM_I_FAILED;
 }
 
@@ -148,6 +150,7 @@ EMTaskItemStatus TaskList::restart(const TaskItemReq &req, string &log)
         TLOGERROR("TaskList::restartServer error:" << log << endl);
     }
 
+    TLOGERROR("TaskList::restartServer error:" << req.application << "," << req.serverName << "," << req.nodeName << "," << req.userName << ", info:" << log << endl);
     return EM_I_FAILED;
 }
 
@@ -166,6 +169,8 @@ EMTaskItemStatus TaskList::undeploy(const TaskItemReq &req, string &log)
         TLOGERROR("TaskList::undeploy error:" << log << endl);
     }
 
+    TLOGERROR("TaskList::undeploy error:" << req.application << "," << req.serverName << "," << req.nodeName << "," << req.userName << ", info:" << log << endl);
+    
     return EM_I_FAILED;
 }
 
@@ -183,6 +188,8 @@ EMTaskItemStatus TaskList::stop(const TaskItemReq &req, string &log)
         log = ex.what();
         TLOGERROR("TaskList::stop error:" << log << endl);
     }
+
+    TLOGERROR("TaskList::stop error:" << req.application << "," << req.serverName << "," << req.nodeName << "," << req.userName << ", info:" << log << endl);
 
     return EM_I_FAILED;
 }
@@ -209,7 +216,7 @@ EMTaskItemStatus TaskList::patch(const TaskItemReq &req, string &log)
         
         string patchId   = get("patch_id", req.parameters);
         string patchType = get("patch_type", req.parameters);
-	string groupName = get("group_name", req.parameters);
+	    string groupName = get("group_name", req.parameters);
 
         tars::PatchRequest patchReq;
         patchReq.appname    = req.application;
@@ -217,7 +224,7 @@ EMTaskItemStatus TaskList::patch(const TaskItemReq &req, string &log)
         patchReq.nodename   = req.nodeName;
         patchReq.version    = patchId;
         patchReq.user       = req.userName;
-	patchReq.groupname  = groupName;
+	    patchReq.groupname  = groupName;
 
         try
         {
@@ -233,6 +240,8 @@ EMTaskItemStatus TaskList::patch(const TaskItemReq &req, string &log)
         if (ret != EM_TARS_SUCCESS)
         {
             log = "batchPatch err:" + log;
+
+            TLOGERROR("TaskList::patch error:" << req.application << "," << req.serverName << "," << req.nodeName << "," << req.userName << ", info:" << log << endl);
             return EM_I_FAILED;
         }
 

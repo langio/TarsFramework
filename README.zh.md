@@ -1,10 +1,13 @@
+[Click to View English](README.md)
+
+[查看Tars整体介绍文文档](https://tarscloud.github.io/TarsDocs)
+
+
 该工程是Tars框架的基础服务，是承载TARS各个语言的服务运行的基础框架。
 
 
 目录名称 |功能
 ----------------------|----------------
-sql                   |创建TARS框架运行环境的数据库的脚本和sql工具
-conf                  |各个基础服务的模版配置
 protocol              |定义各个基础服务定义的通信接口文件
 RegistryServer        |名字服务路由
 NodeServer            |管理服务

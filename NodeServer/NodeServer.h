@@ -55,7 +55,7 @@ public:
      /*
     *   上报string至notify
     */
-    void reportServer(const string &sServerId,const string &sResult);
+    void reportServer(const string& sServerId, const string &sSet, const string &sNodeName,  const string &sResult);
 
 public:
     /*
@@ -70,13 +70,16 @@ public:
 
 protected:
 
+    //host 换成ip
+    string host2Ip(const string& host);
+
     /**
      * 初始化, 只会进程调用一次
      */
     virtual void initialize();
 
     /**
-     * 析够, 只会进程调用一次
+     * 析构, 只会进程调用一次
      */
     virtual void destroyApp();
 

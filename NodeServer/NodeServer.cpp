@@ -267,6 +267,17 @@ string tostr(const set<string>& setStr)
     return str;
 }
 
+string NodeServer::host2Ip(const string& host)
+{
+    struct in_addr stSinAddr;
+    TC_Socket::parseAddr(host, stSinAddr);
+
+    char ip[INET_ADDRSTRLEN] = "\0";
+    inet_ntop(AF_INET, &stSinAddr, ip, INET_ADDRSTRLEN);
+
+    return ip;
+}
+
 bool NodeServer::isValid(const string& ip)
 {
     static time_t g_tTime = 0;
@@ -274,13 +285,27 @@ bool NodeServer::isValid(const string& ip)
 
     time_t tNow = TNOW;
 
+    // TLOGDEBUG("NodeServer::isValid ip:" << ip << " -> dst:" << dst << endl);
+
     static  TC_ThreadLock g_tMutex;
 
     TC_ThreadLock::Lock  lock(g_tMutex);
     if (tNow - g_tTime > 60)
     {
         string objs = g_pconf->get("/tars/node<cmd_white_list>", "tars.tarsregistry.AdminRegObj:tars.tarsAdminRegistry.AdminRegObj");
-        string ips  = g_pconf->get("/tars/node<cmd_white_list_ip>", "172.25.38.208:172.25.38.208");
+        string ips  = g_pconf->get("/tars/node<cmd_white_list_ip>", "");
+
+        // struct in_addr stSinAddr;
+        // TC_Socket::parseAddr(ServerConfig::LocalIp, stSinAddr);
+
+        // char dst[INET_ADDRSTRLEN] = "\0";
+        // inet_ntop(AF_INET, &stSinAddr, dst, INET_ADDRSTRLEN);
+
+        if(!ips.empty())
+        {
+            ips += ":";
+        }
+        ips += string("127.0.0.1:") + host2Ip(ServerConfig::LocalIp);
 
         TLOGDEBUG("NodeServer::isValid objs:" << objs << "|ips:" << ips << endl);
 
@@ -290,7 +315,7 @@ bool NodeServer::isValid(const string& ip)
         for (size_t i = 0; i < vIp.size(); i++)
         {
             g_ipSet.insert(vIp[i]);
-            TLOGDEBUG(ips << "g_ipSet insert ip:" << vIp[i] << endl);
+            // TLOGDEBUG(ips << ", ,g_ipSet insert ip:" << vIp[i] << endl);
         }
 
         for (size_t i = 0; i < vObj.size(); i++)
@@ -306,12 +331,12 @@ bool NodeServer::isValid(const string& ip)
 
                 for (unsigned i = 0; i < vActiveEp.size(); i++)
                 {
-                    tempSet.insert(vActiveEp[i].host());
+                    tempSet.insert(host2Ip(vActiveEp[i].host()));
                 }
 
                 for (unsigned i = 0; i < vInactiveEp.size(); i++)
                 {
-                    tempSet.insert(vInactiveEp[i].host());
+                    tempSet.insert(host2Ip(vInactiveEp[i].host()));
                 }
 
                 TLOGDEBUG("NodeServer::isValid "<< obj << "|tempSet.size():" << tempSet.size() << "|" << tostr(tempSet) << endl);
@@ -340,7 +365,7 @@ bool NodeServer::isValid(const string& ip)
         return true;
     }
 
-    if (g_sNodeIp == ip)
+    if (g_sNodeIp == ip || ServerConfig::LocalIp == ip)
     {
         return true;
     }
@@ -348,15 +373,33 @@ bool NodeServer::isValid(const string& ip)
     return false;
 }
 
-void NodeServer::reportServer(const string& sServerId, const string& sResult)
+void NodeServer::reportServer(const string& sServerId, const string &sSet, const string &sNodeName, const string& sResult)
 {
     try
     {
         //上报到notify
         NotifyPrx pNotifyPrx = Application::getCommunicator()->stringToProxy<NotifyPrx>(ServerConfig::Notify);
+
         if (pNotifyPrx && sResult != "")
         {
-            pNotifyPrx->async_reportServer(NULL, sServerId, "", sResult);
+            ReportInfo ri;
+            ri.eType = REPORT;
+            ri.sApp = sServerId;
+            ri.sServer = sServerId;
+
+            vector<string> vModule = TC_Common::sepstr<string>(sServerId, ".");
+            if (vModule.size() >= 2)
+            {
+                ri.sApp = vModule[0];
+                ri.sServer = vModule[1];
+            }
+            ri.sSet = sSet;
+
+            ri.sMessage = sResult;
+            ri.eLevel   = NOTIFYERROR;
+            ri.sNodeName = sNodeName;
+
+            pNotifyPrx->async_reportNotifyInfo(NULL, ri);
         }
     }
     catch (exception& ex)
