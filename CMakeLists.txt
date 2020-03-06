@@ -4,22 +4,25 @@ project(framework)
 
 set(CMAKE_VERBOSE_MAKEFILE off)
 
+set(TARS_CPP_COMMON "1")
+
 include("${PROJECT_SOURCE_DIR}/tarscpp/cmake/Common.cmake")
+
+include("${PROJECT_SOURCE_DIR}/tarscpp/cmake/BuildTarsCpp.cmake")
+
+include("${PROJECT_SOURCE_DIR}/tarscpp/cmake/Thirdparty.cmake")
+
+include("${PROJECT_SOURCE_DIR}/tarscpp/cmake/ParseAsm.cmake")
 
 add_subdirectory(tarscpp)
 
 include_directories(${util_SOURCE_DIR}/include)
 include_directories(${servant_SOURCE_DIR})
-#include_directories(${MYSQL_DIR_INC})
 include_directories("thirdparty/rapidjson/include")
-
-link_libraries(tarsservant tarsutil)
-link_libraries(mysqlclient)
-link_libraries(pthread z dl rt)
 
 macro(complice_module MODULE)
 
-    set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/servers/${MODULE}/bin)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/servers/${MODULE}/bin)
 
     include_directories(${PROJECT_SOURCE_DIR}/tarscpp/servant/protocol/framework)
     include_directories(${servant_SOURCE_DIR}/servant)
@@ -30,6 +33,17 @@ macro(complice_module MODULE)
     add_dependencies(${MODULE} FRAMEWORK-PROTOCOL)
     add_dependencies(${MODULE} tars2cpp)
 
+    target_link_libraries(${MODULE} tarsservant tarsutil mysqlclient)
+
+    if(TARS_SSL)
+        target_link_libraries(${MODULE} ${LIB_SSL} ${LIB_CRYPTO})
+    endif()
+
+    if(TARS_HTTP2)
+        target_link_libraries(${MODULE} ${LIB_HTTP2})
+    endif()
+   
+    link_libraries(pthread z dl) 
 endmacro()
 
 #调用tars2cpp, 生成tars对应的文件
@@ -142,7 +156,7 @@ endforeach ()
 
 ############################################################################################
 
-install(DIRECTORY build/servers/ DESTINATION deploy/framework/servers
+install(DIRECTORY ${CMAKE_BINARY_DIR}/servers/ DESTINATION deploy/framework/servers
         PATTERN "tars*"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ)
         
